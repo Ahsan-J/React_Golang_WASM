@@ -22,7 +22,35 @@
     <title>React App</title>
   </head>
   <body>
+      <script src="%PUBLIC_URL%/lib/wasm_exec.js"></script>
+      <script>
+        if (!WebAssembly.instantiateStreaming) {
+            // polyfill
+            WebAssembly.instantiateStreaming = async (resp, importObject) => {
+              const source = await (await resp).arrayBuffer();
+              return await WebAssembly.instantiate(source, importObject);
+            };
+          }
+    
+          const go = new Go();
+    
+          let mod, inst;
+    
+          WebAssembly.instantiateStreaming(fetch("%PUBLIC_URL%/build/main.wasm"), go.importObject).then(
+            async result => {
+              mod = result.module;
+              inst = result.instance;
+              await go.run(inst);
+            }
+          );
+    
+          async function run() {
+            await go.run(inst);
+            inst = await WebAssembly.instantiate(mod, go.importObject); // reset instance
+          }
+      </script>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    <script></script>
     <div id="root"></div>
     <!--
       This HTML file is a template.
